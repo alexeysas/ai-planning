@@ -140,8 +140,33 @@ class AirCargoProblem(Problem):
             e.g. 'FTTTFF'
         :return: list of Action objects
         """
-        # TODO implement
         possible_actions = []
+
+        #Decode actions from action string e.g. 'FTTTFF'
+        kb = PropKB()
+        kb.tell(decode_state(state, self.state_map).pos_sentence())
+
+        #iterate though all possible actions
+        for action in self.actions_list:
+            is_possible = True
+
+            #checking positive preconditions for action....
+            for clause in action.precond_pos:
+
+                #if clause is not in given state - action is not possible
+                if clause not in kb.clauses:
+                    is_possible = False
+
+            #checking negative preconditions for action....
+            for clause in action.precond_neg:
+
+                #if clause is in given state - action is not possible
+                if clause in kb.clauses:
+                    is_possible = False
+
+            if is_possible:
+                possible_actions.append(action)
+
         return possible_actions
 
     def result(self, state: str, action: Action):
@@ -153,8 +178,33 @@ class AirCargoProblem(Problem):
         :param action: Action applied
         :return: resulting state after action
         """
-        # TODO implement
         new_state = FluentState([], [])
+        old_state = decode_state(state, self.state_map)
+
+        #for all positive clauses in the previous state
+        for fluent in old_state.pos:
+            #if action does not removes this clause - keep it in new state
+            if fluent not in action.effect_rem:
+                new_state.pos.append(fluent)
+
+        #for all clauses that are added by action
+        for fluent in action.effect_add:
+            #if we havent already added this clause - add it to the new state
+            if fluent not in new_state.pos:
+                new_state.pos.append(fluent)
+
+        #for all negative clauses in the previous state
+        for fluent in old_state.neg:
+            #if this clause is not added by action - keep it as negative in the new state
+            if fluent not in action.effect_add:
+                new_state.neg.append(fluent)
+
+        #for all clauses that are removed by action
+        for fluent in action.effect_rem:
+            #if we havent added this as negative clause - add it to the new state as negative
+            if fluent not in new_state.neg:
+                new_state.neg.append(fluent)
+
         return encode_state(new_state, self.state_map)
 
     def goal_test(self, state: str) -> bool:
