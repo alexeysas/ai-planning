@@ -244,8 +244,23 @@ class AirCargoProblem(Problem):
         conditions by ignoring the preconditions required for an action to be
         executed.
         """
-        # TODO implement (see Russell-Norvig Ed-3 10.2.3  or Russell-Norvig Ed-2 11.2)
-        count = 0
+        kb = PropKB()
+        kb.tell(decode_state(node.state, self.state_map).pos_sentence())
+
+        # from the book:
+        # This almost implies that the number of steps
+        # required to solve the relaxed problem is the number of unsatisfied goals—almost but not
+        # quite, because (1) some action may achieve multiple goals and (2) some actions may undo
+        # the effects of others. For many problems an accurate heuristic is obtained
+        # by considering (1) and ignoring (2). First, we relax the actions by removing all
+        # preconditions and all effects except those that are literals in the goal.
+
+        # So looking into problems goals and taking into consideration that
+        # we can not upload multiple cargos as single action we can just count unsatisfied
+        # goals as ignore preconditions heuristic
+
+        count = sum([1 if goal_fluent not in kb.clauses else 0 for goal_fluent in self.goal])
+
         return count
 
 
@@ -314,7 +329,7 @@ def air_cargo_p2() -> AirCargoProblem:
 
     goal = [expr('At(C1, JFK)'),
             expr('At(C2, SFO)'),
-            expr('At(C2, SFO)'),
+            expr('At(C3, SFO)'),
             ]
     return AirCargoProblem(cargos, planes, airports, init, goal)
 
